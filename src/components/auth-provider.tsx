@@ -1,61 +1,56 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { createContext, useContext, useEffect, useState } from "react"
-import type { User } from "@/lib/auth"
-import { getStoredUser, setStoredUser } from "@/lib/auth"
+import { createContext, useContext } from "react";
+import {
+  SessionProvider,
+  useSession,
+  signIn as nextSignIn,
+  signOut as nextSignOut,
+} from "next-auth/react";
+import type { Session } from "next-auth";
 
 interface AuthContextType {
-  user: User | null
-  isLoading: boolean
-  signIn: () => Promise<void>
-  signOut: () => void
+  user: Session["user"] | null;
+  isLoading: boolean;
+  signIn: () => Promise<void>;
+  signOut: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const storedUser = getStoredUser()
-    setUser(storedUser)
-    setIsLoading(false)
-  }, [])
+function InnerAuthProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
 
   const signIn = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/auth/google", {
-        method: "POST",
-      })
-      const data = await response.json()
-
-      if (data.user) {
-        setUser(data.user)
-        setStoredUser(data.user)
-      }
-    } catch (error) {
-      console.error("Sign in failed:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    await nextSignIn("google");
+  };
 
   const signOut = () => {
-    setUser(null)
-    setStoredUser(null)
-  }
+    nextSignOut();
+  };
 
-  return <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>{children}</AuthContext.Provider>
+  const value: AuthContextType = {
+    user: session?.user ?? null,
+    isLoading: status === "loading",
+    signIn,
+    signOut,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <SessionProvider>
+      <InnerAuthProvider>{children}</InnerAuthProvider>
+    </SessionProvider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }
