@@ -32,7 +32,7 @@ class SimulatedMongoDB {
     return this.jobs
       .filter((job) => job.userId === userId)
       .map((job) => {
-        const { userId, ...rest } = job;
+        const { userId: _userId, ...rest } = job;
         return rest;
       })
       .sort(

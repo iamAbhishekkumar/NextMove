@@ -29,7 +29,11 @@ const eslintConfig = [
       // Customize strictness as needed
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_" },
+        {
+          argsIgnorePattern: "^_", // Ignores unused function arguments starting with _
+          varsIgnorePattern: "^_", // Ignores unused local variables starting with _
+          // You can also add `caughtErrorsIgnorePattern: "^_"` if you want to ignore unused catch clause variables
+        },
       ],
       "@typescript-eslint/no-empty-interface": "off", // turn off empty interface warning
       "@typescript-eslint/no-explicit-any": "warn", // or "error" based on your style

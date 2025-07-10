@@ -123,7 +123,7 @@ export default function JobTracker() {
     try {
       const response = await fetch("/api/jobs", {
         headers: {
-          "x-user-id": user.id,
+          "x-user-id": "user.id",
         },
       });
       const data = await response.json();
@@ -165,7 +165,7 @@ export default function JobTracker() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": user.id,
+            "x-user-id": "user.id",
           },
           body: JSON.stringify(formData),
         });
@@ -186,7 +186,7 @@ export default function JobTracker() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": user.id,
+            "x-user-id": "user.id",
           },
           body: JSON.stringify(formData),
         });
@@ -233,7 +233,7 @@ export default function JobTracker() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": user.id,
+          "x-user-id": "user.id",
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -257,7 +257,7 @@ export default function JobTracker() {
       const response = await fetch(`/api/jobs/${jobId}`, {
         method: "DELETE",
         headers: {
-          "x-user-id": user.id,
+          "x-user-id": "user.id",
         },
       });
 
@@ -447,10 +447,7 @@ export default function JobTracker() {
                     className="relative h-8 w-8 rounded-full"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src={user.image || "/placeholder.svg"}
-                        alt={user.name}
-                      />
+                      <AvatarImage src={user.image || "/placeholder.svg"} />
                       <AvatarFallback>
                         <User className="h-4 w-4" />
                       </AvatarFallback>
