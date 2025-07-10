@@ -12,7 +12,7 @@ export const authConfig: NextAuthOptions = {
     signIn: "/login", // optional custom login route
   },
   callbacks: {
-    async session({ session, token, user }) {
+    async session({ session }) {
       return session; // Customize session if needed
     },
   },

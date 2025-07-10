@@ -110,6 +110,7 @@ export default function JobTracker() {
     }
   }, [user, isLoading, router]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (user) {
       fetchJobs();
@@ -129,7 +130,7 @@ export default function JobTracker() {
 
       if (data.jobs) {
         setJobs(
-          data.jobs.map((job: any) => ({
+          data.jobs.map((job: Job) => ({
             ...job,
             createdAt: new Date(job.createdAt),
           }))
