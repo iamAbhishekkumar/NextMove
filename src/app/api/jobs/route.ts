@@ -1,42 +1,37 @@
-// /api/your-endpoint/route.ts
-import { type NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+// /app/api/jobs/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import dbConnect from "@/lib/mongoose";
+import JobModel from "@/models/Job";
 
-export async function GET(request: NextRequest) {
-  const userId = request.headers.get("x-user-id");
-
-  if (!userId) {
+export async function GET(req: NextRequest) {
+  const userId = req.headers.get("x-user-id");
+  if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
-  try {
-    const jobs = await db.findJobsByUserId(userId);
-    return NextResponse.json({ jobs });
-  } catch (error) {
-    console.error("GET /jobs error:", error); // ✅ Using the variable
-    return NextResponse.json(
-      { error: "Failed to fetch jobs" },
-      { status: 500 }
-    );
-  }
+  await dbConnect();
+
+  const jobs = await JobModel.find({ userId }).sort({ createdAt: -1 }).lean();
+  const cleanJobs = jobs.map(({ userId: _, _id, __v, ...job }) => job);
+
+  return NextResponse.json({ jobs: cleanJobs });
 }
 
-export async function POST(request: NextRequest) {
-  const userId = request.headers.get("x-user-id");
-
-  if (!userId) {
+export async function POST(req: NextRequest) {
+  const userId = req.headers.get("x-user-id");
+  if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
-  try {
-    const jobData = await request.json();
-    const job = await db.createJob(userId, jobData);
-    return NextResponse.json({ job });
-  } catch (error) {
-    console.error("POST /jobs error:", error); // ✅ Using the variable
-    return NextResponse.json(
-      { error: "Failed to create job" },
-      { status: 500 }
-    );
-  }
+  const jobData = await req.json();
+
+  await dbConnect();
+
+  const job = await JobModel.create({
+    ...jobData,
+    id: Date.now().toString(),
+    createdAt: new Date(),
+    userId,
+  });
+
+  const { userId: _, _id, __v, ...cleanJob } = job.toObject();
+  return NextResponse.json({ job: cleanJob });
 }

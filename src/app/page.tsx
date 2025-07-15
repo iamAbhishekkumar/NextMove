@@ -123,7 +123,7 @@ export default function JobTracker() {
     try {
       const response = await fetch("/api/jobs", {
         headers: {
-          "x-user-id": "user.id",
+          "x-user-id": user.email!,
         },
       });
       const data = await response.json();
@@ -165,7 +165,7 @@ export default function JobTracker() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": "user.id",
+            "x-user-id": user.email!,
           },
           body: JSON.stringify(formData),
         });
@@ -186,7 +186,7 @@ export default function JobTracker() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": "user.id",
+            "x-user-id": user.email!,
           },
           body: JSON.stringify(formData),
         });
@@ -233,7 +233,7 @@ export default function JobTracker() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "user.id",
+          "x-user-id": user.email!,
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -257,7 +257,7 @@ export default function JobTracker() {
       const response = await fetch(`/api/jobs/${jobId}`, {
         method: "DELETE",
         headers: {
-          "x-user-id": "user.id",
+          "x-user-id": user.email!,
         },
       });
 
