@@ -4,10 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import JobModel from "@/models/Job";
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: NextRequest, { params }: any) {
   const userId = req.headers.get("x-user-id");
   const { id: jobId } = await params;
 
@@ -43,10 +40,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, { params }: any) {
   const userId = req.headers.get("x-user-id");
   const { id: jobId } = await params;
 

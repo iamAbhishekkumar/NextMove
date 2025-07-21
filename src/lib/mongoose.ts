@@ -1,34 +1,58 @@
-// lib/mongoose.ts
+import mongoose, { Connection } from "mongoose";
 
-import mongoose from "mongoose";
+const { DBUSER, PASSWORD, CLUSTER, DBNAME } = process.env;
 
-const DBUSER = process.env.DBUSER!;
-const PASSWORD = process.env.PASSWORD!;
-const CLUSTER = process.env.CLUSTER!;
-const DBNAME = process.env.DBNAME!;
-
-const MONGODB_URI = `mongodb+srv://${DBUSER}:${PASSWORD}@${CLUSTER}.mongodb.net/${DBNAME}?retryWrites=true&w=majority`;
-if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable");
+if (!DBUSER || !PASSWORD || !CLUSTER || !DBNAME) {
+  throw new Error(
+    "Missing one or more required MongoDB environment variables."
+  );
 }
 
-let cached = (global as any).mongoose;
+const MONGODB_URI = `mongodb+srv://${DBUSER}:${PASSWORD}@${CLUSTER}.mongodb.net/${DBNAME}?retryWrites=true&w=majority&appName=${DBNAME}`;
 
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+// Extend Node.js global to store the cached connection
+declare global {
+  // eslint-disable-next-line no-var
+  var _mongoose:
+    | {
+        conn: Connection | null;
+        promise: Promise<Connection> | null;
+      }
+    | undefined;
 }
 
-async function dbConnect() {
+const globalMongoose = globalThis as typeof globalThis & {
+  _mongoose?: {
+    conn: Connection | null;
+    promise: Promise<Connection> | null;
+  };
+};
+
+// Initialize cache
+if (!globalMongoose._mongoose) {
+  globalMongoose._mongoose = { conn: null, promise: null };
+}
+
+async function dbConnect(): Promise<Connection> {
+  const cached = globalMongoose._mongoose!;
+
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-    });
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        bufferCommands: false,
+      })
+      .then(() => mongoose.connection); // ✅ fix here
   }
 
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (error) {
+    cached.promise = null; // reset on failure
+    throw error;
+  }
+
   return cached.conn;
 }
-
 export default dbConnect;
