@@ -1,28 +1,34 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@/components/auth-provider"
-import { Briefcase, Chrome } from "lucide-react"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useAuth } from "@/components/auth-provider";
+import { Briefcase, Chrome } from "lucide-react";
 
 export default function LoginPage() {
-  const { user, isLoading, signIn } = useAuth()
-  const router = useRouter()
+  const { user, isLoading, signIn } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (user && !isLoading) {
-      router.push("/")
+      router.push("/");
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -34,11 +40,21 @@ export default function LoginPage() {
               <Briefcase className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome to Job Tracker</CardTitle>
-          <CardDescription>Sign in with your Google account to start tracking your job applications</CardDescription>
+          <CardTitle className="text-2xl font-bold">
+            Welcome to Next Move
+          </CardTitle>
+          <CardDescription>
+            Sign in with your Google account to start tracking your job
+            applications
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={signIn} disabled={isLoading} className="w-full" size="lg">
+          <Button
+            onClick={signIn}
+            disabled={isLoading}
+            className="w-full"
+            size="lg"
+          >
             <Chrome className="w-5 h-5 mr-2" />
             {isLoading ? "Signing in..." : "Continue with Google"}
           </Button>
@@ -48,5 +64,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
