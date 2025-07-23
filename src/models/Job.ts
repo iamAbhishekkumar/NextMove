@@ -25,7 +25,7 @@ const JobSchema = new Schema<DbJob>({
   userId: { type: String, required: true },
   companyName: { type: String, required: true },
   jobRole: { type: String, required: true },
-  jobUrl: { type: String, required: true },
+  jobUrl: { type: String, required: false },
   notes: { type: String, required: false },
   status: {
     type: String,

@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log("POST triggered");
   const userId = req.headers.get("x-user-id");
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -15,6 +14,7 @@ import {
   LogOut,
   User,
 } from "lucide-react";
+import { z } from "zod"; // Import zod
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +60,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/components/auth-provider";
 import type { Job, JobStatus } from "@/lib/types";
 
+// Define the Zod schema for job application form data
+const jobFormSchema = z.object({
+  companyName: z.string().min(1, "Company Name is required."),
+  jobRole: z.string().min(1, "Job Role is required."),
+  jobUrl: z.url("Invalid URL format.").optional().or(z.literal("")),
+  notes: z.string().optional(),
+  status: z.enum([
+    "waiting-for-referral",
+    "applied",
+    "applied-with-referral",
+    "rejected",
+    "selected",
+  ]),
+});
+
+type JobFormData = z.infer<typeof jobFormSchema>;
+
 const statusConfig = {
   "waiting-for-referral": {
     label: "Waiting for Referral",
@@ -95,13 +112,16 @@ export default function JobTracker() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<JobStatus | "all">("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<JobFormData>({
     companyName: "",
     jobRole: "",
     jobUrl: "",
     notes: "",
-    status: "" as JobStatus,
+    status: "applied", // Default status
   });
+  const [formErrors, setFormErrors] = useState<
+    Record<string, string[] | undefined>
+  >({});
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
   useEffect(() => {
@@ -110,11 +130,11 @@ export default function JobTracker() {
     }
   }, [user, isLoading, router]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (user) {
       fetchJobs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchJobs = async () => {
@@ -148,12 +168,26 @@ export default function JobTracker() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !user ||
-      !formData.companyName ||
-      !formData.jobRole ||
-      !formData.status
-    ) {
+    setFormErrors({}); // Clear previous errors
+
+    const validationResult = jobFormSchema.safeParse(formData);
+
+    if (!validationResult.success) {
+      const fieldErrors: Record<string, string[]> = {};
+      validationResult.error.issues.forEach((err) => {
+        if (err.path.length > 0) {
+          const path = err.path.join(".");
+          if (!fieldErrors[path]) {
+            fieldErrors[path] = [];
+          }
+          fieldErrors[path]!.push(err.message);
+        }
+      });
+      setFormErrors(fieldErrors);
+      return;
+    }
+
+    if (!user) {
       return;
     }
 
@@ -167,7 +201,7 @@ export default function JobTracker() {
             "Content-Type": "application/json",
             "x-user-id": user.email!,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(validationResult.data), // Use validated data
         });
 
         if (response.ok) {
@@ -188,7 +222,7 @@ export default function JobTracker() {
             "Content-Type": "application/json",
             "x-user-id": user.email!,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(validationResult.data), // Use validated data
         });
 
         if (response.ok) {
@@ -204,12 +238,19 @@ export default function JobTracker() {
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Failed to save job:", error);
+      // Optionally set a generic form error here
+      setFormErrors({
+        _general: ["An unexpected error occurred. Please try again."],
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
+  const handleInputChange = (
+    field: keyof JobFormData,
+    value: string | JobStatus
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -222,6 +263,7 @@ export default function JobTracker() {
       status: job.status,
     });
     setEditingJob(job);
+    setFormErrors({}); // Clear errors when opening for edit
     setIsDialogOpen(true);
   };
 
@@ -275,9 +317,10 @@ export default function JobTracker() {
       jobRole: "",
       jobUrl: "",
       notes: "",
-      status: "" as JobStatus,
+      status: "applied", // Reset to default status
     });
     setEditingJob(null);
+    setFormErrors({}); // Clear errors on reset
   };
 
   if (isLoading) {
@@ -309,14 +352,22 @@ export default function JobTracker() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog
+                open={isDialogOpen}
+                onOpenChange={(open) => {
+                  setIsDialogOpen(open);
+                  if (!open) resetForm(); // Reset form when dialog closes
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button className="w-full sm:w-auto">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Application
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-[400px] max-h-[85vh] p-0">
+                <DialogContent className="w-[95vw] max-w-[400px] max-h-[90vh] p-0 flex flex-col">
+                  {" "}
+                  {/* Adjusted max-h for mobile scrolling */}
                   <div className="p-6 pb-0">
                     <DialogHeader>
                       <DialogTitle>
@@ -331,7 +382,9 @@ export default function JobTracker() {
                       </DialogDescription>
                     </DialogHeader>
                   </div>
-                  <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
+                  <ScrollArea className="flex-1 px-6 pb-6">
+                    {" "}
+                    {/* ScrollArea for form content */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="company">Company Name *</Label>
@@ -344,6 +397,11 @@ export default function JobTracker() {
                           placeholder="e.g. Google, Microsoft"
                           required
                         />
+                        {formErrors.companyName && (
+                          <p className="text-red-500 text-sm">
+                            {formErrors.companyName[0]}
+                          </p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -357,6 +415,11 @@ export default function JobTracker() {
                           placeholder="e.g. Software Engineer, Product Manager"
                           required
                         />
+                        {formErrors.jobRole && (
+                          <p className="text-red-500 text-sm">
+                            {formErrors.jobRole[0]}
+                          </p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -370,13 +433,18 @@ export default function JobTracker() {
                           }
                           placeholder="https://..."
                         />
+                        {formErrors.jobUrl && (
+                          <p className="text-red-500 text-sm">
+                            {formErrors.jobUrl[0]}
+                          </p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="status">Status *</Label>
                         <Select
                           value={formData.status}
-                          onValueChange={(value) =>
+                          onValueChange={(value: JobStatus) =>
                             handleInputChange("status", value)
                           }
                           required
@@ -396,6 +464,11 @@ export default function JobTracker() {
                             <SelectItem value="selected">Selected</SelectItem>
                           </SelectContent>
                         </Select>
+                        {formErrors.status && (
+                          <p className="text-red-500 text-sm">
+                            {formErrors.status[0]}
+                          </p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -409,7 +482,18 @@ export default function JobTracker() {
                           placeholder="Any additional notes..."
                           rows={3}
                         />
+                        {formErrors.notes && (
+                          <p className="text-red-500 text-sm">
+                            {formErrors.notes[0]}
+                          </p>
+                        )}
                       </div>
+
+                      {formErrors._general && (
+                        <p className="text-red-500 text-sm">
+                          {formErrors._general[0]}
+                        </p>
+                      )}
 
                       <div className="flex gap-2 pt-4">
                         <Button
@@ -436,7 +520,7 @@ export default function JobTracker() {
                         </Button>
                       </div>
                     </form>
-                  </div>
+                  </ScrollArea>
                 </DialogContent>
               </Dialog>
 
@@ -514,7 +598,13 @@ export default function JobTracker() {
               <p className="text-muted-foreground mb-4 text-sm sm:text-base">
                 Start tracking your job applications by adding your first one.
               </p>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog
+                open={isDialogOpen}
+                onOpenChange={(open) => {
+                  setIsDialogOpen(open);
+                  if (!open) resetForm();
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
