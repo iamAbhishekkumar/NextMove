@@ -318,6 +318,27 @@ export default function JobTracker() {
     setFormErrors({}); // Clear errors on reset
   };
 
+  const hasFormData = () => {
+    return (
+      formData.companyName ||
+      formData.jobRole ||
+      formData.jobUrl ||
+      formData.notes ||
+      formData.status !== "applied"
+    );
+  };
+
+  const handleDialogClose = () => {
+    if (hasFormData() && !editingJob) {
+      // Could add confirmation dialog here in the future
+      // For now, just close without resetting
+      setIsDialogOpen(false);
+    } else {
+      setIsDialogOpen(false);
+      resetForm();
+    }
+  };
+
   const toggleNoteExpansion = (jobId: string) => {
     setExpandedNotes((prev) => {
       const newSet = new Set(prev);
@@ -361,8 +382,11 @@ export default function JobTracker() {
               <Dialog
                 open={isDialogOpen}
                 onOpenChange={(open) => {
-                  setIsDialogOpen(open);
-                  if (!open) resetForm(); // Reset form when dialog closes
+                  if (!open) {
+                    handleDialogClose();
+                  } else {
+                    setIsDialogOpen(open);
+                  }
                 }}
               >
                 <DialogTrigger asChild>
@@ -616,8 +640,11 @@ export default function JobTracker() {
               <Dialog
                 open={isDialogOpen}
                 onOpenChange={(open) => {
-                  setIsDialogOpen(open);
-                  if (!open) resetForm();
+                  if (!open) {
+                    handleDialogClose();
+                  } else {
+                    setIsDialogOpen(open);
+                  }
                 }}
               >
                 <DialogTrigger asChild>
