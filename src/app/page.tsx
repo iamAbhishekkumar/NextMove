@@ -123,6 +123,7 @@ export default function JobTracker() {
     Record<string, string[] | undefined>
   >({});
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -317,6 +318,18 @@ export default function JobTracker() {
     setFormErrors({}); // Clear errors on reset
   };
 
+  const toggleNoteExpansion = (jobId: string) => {
+    setExpandedNotes((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -358,23 +371,22 @@ export default function JobTracker() {
                     Add Application
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-[400px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
-                  <div className="p-6 pb-0 flex-shrink-0">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingJob
-                          ? "Edit Application"
-                          : "Add New Job Application"}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingJob
-                          ? "Update your job application details."
-                          : "Fill in the details of your job application."}
-                      </DialogDescription>
-                    </DialogHeader>
-                  </div>
-                  <ScrollArea className="flex-1 px-6 pb-6">
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                <DialogContent className="w-[95vw] max-w-[400px] max-h-[90vh] flex flex-col">
+                  <DialogHeader className="flex-shrink-0 px-6 pt-6">
+                    <DialogTitle>
+                      {editingJob
+                        ? "Edit Application"
+                        : "Add New Job Application"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingJob
+                        ? "Update your job application details."
+                        : "Fill in the details of your job application."}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="flex-1 overflow-y-auto px-6 pb-6">
+                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                       <div className="space-y-2">
                         <Label htmlFor="company">Company Name *</Label>
                         <Input
@@ -482,7 +494,7 @@ export default function JobTracker() {
                             const target = e.target as HTMLTextAreaElement;
                             target.style.height = "auto";
                             target.style.height =
-                              Math.min(target.scrollHeight, 70) + "px";
+                              Math.min(target.scrollHeight, 120) + "px";
                           }}
                         />
                         {formErrors.notes && (
@@ -498,7 +510,7 @@ export default function JobTracker() {
                         </p>
                       )}
 
-                      <div className="flex gap-2 pt-4">
+                      <div className="flex gap-2 pt-4 sticky bottom-0 bg-background border-t mt-6 pt-4 -mx-6 px-6">
                         <Button
                           type="submit"
                           className="flex-1"
@@ -523,7 +535,7 @@ export default function JobTracker() {
                         </Button>
                       </div>
                     </form>
-                  </ScrollArea>
+                  </div>
                 </DialogContent>
               </Dialog>
 
@@ -742,8 +754,31 @@ export default function JobTracker() {
                         {job.notes && (
                           <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-muted-foreground break-words whitespace-pre-wrap overflow-hidden">
-                              {job.notes}
+                            <div className="flex-1 min-w-0">
+                              <div
+                                className="text-sm text-muted-foreground break-words whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors"
+                                onClick={() => toggleNoteExpansion(job.id)}
+                              >
+                                {expandedNotes.has(job.id)
+                                  ? job.notes
+                                  : `${job.notes.split("\n")[0]}${
+                                      job.notes.includes("\n") ||
+                                      job.notes.length > 100
+                                        ? "..."
+                                        : ""
+                                    }`}
+                              </div>
+                              {(job.notes.includes("\n") ||
+                                job.notes.length > 100) && (
+                                <button
+                                  onClick={() => toggleNoteExpansion(job.id)}
+                                  className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium"
+                                >
+                                  {expandedNotes.has(job.id)
+                                    ? "Show less"
+                                    : "Show more"}
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}
