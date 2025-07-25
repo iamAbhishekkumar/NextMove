@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "echoscript",
-    short_name: "echoscript",
-    description: "Auto Captioner",
+    name: "nextmove",
+    short_name: "nextmove",
+    description: "Job Tracking App",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
