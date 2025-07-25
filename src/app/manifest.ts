@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "nextmove",
-    short_name: "nextmove",
+    name: "NextMove",
+    short_name: "NextMove",
     description: "Job Tracking App",
     start_url: "/",
     display: "standalone",
