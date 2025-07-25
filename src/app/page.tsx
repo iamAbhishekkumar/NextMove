@@ -1,5 +1,7 @@
 "use client";
 
+import { DialogTrigger } from "@/components/ui/dialog";
+
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -15,7 +17,6 @@ import {
   User,
 } from "lucide-react";
 import { z } from "zod"; // Import zod
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +34,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -139,7 +139,6 @@ export default function JobTracker() {
 
   const fetchJobs = async () => {
     if (!user) return;
-
     try {
       const response = await fetch("/api/jobs", {
         headers: {
@@ -147,7 +146,6 @@ export default function JobTracker() {
         },
       });
       const data = await response.json();
-
       if (data.jobs) {
         setJobs(
           data.jobs.map((job: Job) => ({
@@ -171,7 +169,6 @@ export default function JobTracker() {
     setFormErrors({}); // Clear previous errors
 
     const validationResult = jobFormSchema.safeParse(formData);
-
     if (!validationResult.success) {
       const fieldErrors: Record<string, string[]> = {};
       validationResult.error.issues.forEach((err) => {
@@ -203,7 +200,6 @@ export default function JobTracker() {
           },
           body: JSON.stringify(validationResult.data), // Use validated data
         });
-
         if (response.ok) {
           const data = await response.json();
           setJobs((prev) =>
@@ -224,7 +220,6 @@ export default function JobTracker() {
           },
           body: JSON.stringify(validationResult.data), // Use validated data
         });
-
         if (response.ok) {
           const data = await response.json();
           setJobs((prev) => [
@@ -233,7 +228,6 @@ export default function JobTracker() {
           ]);
         }
       }
-
       resetForm();
       setIsDialogOpen(false);
     } catch (error) {
@@ -350,7 +344,6 @@ export default function JobTracker() {
                 status
               </p>
             </div>
-
             <div className="flex items-center gap-4">
               <Dialog
                 open={isDialogOpen}
@@ -365,10 +358,8 @@ export default function JobTracker() {
                     Add Application
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-[400px] max-h-[90vh] p-0 flex flex-col">
-                  {" "}
-                  {/* Adjusted max-h for mobile scrolling */}
-                  <div className="p-6 pb-0">
+                <DialogContent className="w-[95vw] max-w-[400px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
+                  <div className="p-6 pb-0 flex-shrink-0">
                     <DialogHeader>
                       <DialogTitle>
                         {editingJob
@@ -383,8 +374,6 @@ export default function JobTracker() {
                     </DialogHeader>
                   </div>
                   <ScrollArea className="flex-1 px-6 pb-6">
-                    {" "}
-                    {/* ScrollArea for form content */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="company">Company Name *</Label>
@@ -396,6 +385,7 @@ export default function JobTracker() {
                           }
                           placeholder="e.g. Google, Microsoft"
                           required
+                          className="w-full"
                         />
                         {formErrors.companyName && (
                           <p className="text-red-500 text-sm">
@@ -414,6 +404,7 @@ export default function JobTracker() {
                           }
                           placeholder="e.g. Software Engineer, Product Manager"
                           required
+                          className="w-full"
                         />
                         {formErrors.jobRole && (
                           <p className="text-red-500 text-sm">
@@ -432,6 +423,7 @@ export default function JobTracker() {
                             handleInputChange("jobUrl", e.target.value)
                           }
                           placeholder="https://..."
+                          className="w-full"
                         />
                         {formErrors.jobUrl && (
                           <p className="text-red-500 text-sm">
@@ -449,7 +441,7 @@ export default function JobTracker() {
                           }
                           required
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -480,7 +472,18 @@ export default function JobTracker() {
                             handleInputChange("notes", e.target.value)
                           }
                           placeholder="Any additional notes..."
-                          rows={3}
+                          className="w-full min-h-[80px] max-h-[120px] resize-none overflow-y-auto"
+                          style={{
+                            wordBreak: "break-word",
+                            overflowWrap: "anywhere",
+                            whiteSpace: "pre-wrap",
+                          }}
+                          onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement;
+                            target.style.height = "auto";
+                            target.style.height =
+                              Math.min(target.scrollHeight, 70) + "px";
+                          }}
                         />
                         {formErrors.notes && (
                           <p className="text-red-500 text-sm">
@@ -625,7 +628,6 @@ export default function JobTracker() {
                     })`}
               </h2>
             </div>
-
             <ScrollArea className="h-[calc(100vh-250px)] sm:h-[calc(100vh-300px)]">
               <div className="space-y-4 pr-4">
                 {filteredJobs.map((job) => (
@@ -654,7 +656,6 @@ export default function JobTracker() {
                             {statusConfig[job.status].label}
                           </Badge>
                         </div>
-
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Select
                             value={job.status}
@@ -723,7 +724,6 @@ export default function JobTracker() {
                         </div>
                       </div>
                     </CardHeader>
-
                     <CardContent className="pt-0">
                       <div className="space-y-3">
                         {job.jobUrl && (
@@ -739,16 +739,14 @@ export default function JobTracker() {
                             </a>
                           </div>
                         )}
-
                         {job.notes && (
                           <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-muted-foreground break-words">
+                            <div className="text-sm text-muted-foreground break-words whitespace-pre-wrap overflow-hidden">
                               {job.notes}
-                            </p>
+                            </div>
                           </div>
                         )}
-
                         <div className="text-xs text-muted-foreground">
                           Added on {job.createdAt.toLocaleDateString()}
                         </div>
